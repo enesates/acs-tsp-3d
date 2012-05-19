@@ -3,4 +3,3 @@ class Ant(object):
         self.id = antId
         self.tour = []
         self.tourLength = 0
-        self.visitedCity = []
