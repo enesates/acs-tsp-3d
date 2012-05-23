@@ -5,24 +5,26 @@
 
 import math
 import random
+import time
+from Scene import *
 from Ant import *
 
 
-class City(object):
-    def __init__(self, x, y, cityId):
-        self.id = cityId
-        self.coordinate = [x,y]
-        
-        
-def createCities(cities):
-    file = open("uruguay734_optimal79114.tsp","r")
-    
-    for i in range(0,734):
-        line = file.readline()
-        line = line.strip()
-        line = line.split(" ")
-        cities.append(City(float(line[1]), float(line[2]), i))
-        
+iteration = 100
+ants = []
+pheromoneMatrix = []
+numberOfAnts = 10
+
+beta = 3 # heuristic parameter
+q0 = 0.9 # control parameter for random proportional
+
+rho = 0.1 # evaporation coefficient
+ksi = 0.1 # local_pheromone
+
+numberOfCities=0
+cities = []
+
+
 
 def calculateDistance(start, end):
 
@@ -55,7 +57,7 @@ def nearestNeighbor(cities):
         tourLength += minDistance
             
     path.append(path[0])
-    
+    print tourLength
     return tourLength
       
 
@@ -143,7 +145,6 @@ def globalPheromoneUpdate(bestTour, bestTourLength, phrMatrix, rho):
 def initializeTours(bestTour, ants):
     
     del bestTour[:]
-    
     randomCities = range(0,numberOfCities)
     random.shuffle(randomCities)
     
@@ -154,7 +155,7 @@ def initializeTours(bestTour, ants):
         ants[i].tour.append(cities[randomCities[i%10]])
 
 
-def systemStart(iteration, cities, ants, pheromoneMatrix, numberOfCities, numberOfAnts, beta, q0, rho, ksi, tau0):
+def systemStart(scene, iteration, cities, ants, pheromoneMatrix, numberOfCities, numberOfAnts, beta, q0, rho, ksi, tau0, resultFile):
     
     initializePheromone(cities, pheromoneMatrix, tau0)
     
@@ -163,8 +164,12 @@ def systemStart(iteration, cities, ants, pheromoneMatrix, numberOfCities, number
     
     globalBestTourLength = 0
     
+    strToFile = ""
+    
     for i in range (0,iteration):
-        print "iteration",i
+        #print "iteration",i
+        strToFile = "\n\niteration" + str(i)
+        resultFile.write(strToFile)
         
         bestTourLength = 0
         
@@ -176,47 +181,56 @@ def systemStart(iteration, cities, ants, pheromoneMatrix, numberOfCities, number
             #localSearch()
             localPheromoneUpdate(ants[j], pheromoneMatrix, tau0, ksi)
             
+            #print "Ant's tour. Tour length: ", ants[j].tourLength
+            strToFile = "\nAnt's tour. Tour length: " + str(ants[j].tourLength)
+            resultFile.write(strToFile)
+            scene.updateTour(ants[j].tour)
+            #time.sleep(0.5)
+            
             if bestTourLength == 0 or bestTourLength > ants[j].tourLength:
                 bestTourLength = ants[j].tourLength
                 bestTour = ants[j].tour
+                
         
         if globalBestTourLength == 0 or globalBestTourLength > bestTourLength:
             globalBestTourLength = bestTourLength
+            #print "Best tour until now.. Tour length: ", globalBestTourLength
+            strToFile = "\n\nBest tour until now.. Tour length: " + str(globalBestTourLength)
+            resultFile.write(strToFile)
             globalBestTour = bestTour
+            scene.updateTour(globalBestTour)
+            #time.sleep(0.5)
         
         globalPheromoneUpdate(bestTour, bestTourLength, pheromoneMatrix, rho)
         
+        
     for i in globalBestTour:
        print "Best Tour :",i.coordinate
+       strToFile = "\nBest Tour :" + str(i.coordinate)
+       resultFile.write(strToFile)
         
     print "Best Tour Length:", globalBestTourLength
+    strToFile = "\n\nBest Tour Length:" + str(globalBestTourLength)
+    resultFile.write(strToFile)
+    scene.updateTour(globalBestTour)
+    #time.sleep(0.5)
+    resultFile.close()
     
-            
-
-if __name__ == "__main__":
+def start(scene, city):
+    global cities, numberOfCities
     
-    iteration = 100
-    cities = []
-    ants = []
-    pheromoneMatrix = []
-    numberOfAnts = 10
+    resultFile = open("result","w")
     
-    beta = 2.5 # heuristic parameter
-    q0 = 0.9 # control parameter for random proportional
-    
-    rho = 0.1 # evaporation coefficient
-    ksi = 0.1 # local_pheromone
-    
-    createCities(cities)
+    cities = city
     numberOfCities = len(cities)
     
     tau0 = 1/(len(cities) * nearestNeighbor(list(cities))) # copying cities list and send nn algorithm
+    
     # tau0 = (n * Cnn )^-1
     
     # create Ants
     for i in range(0,numberOfAnts):
         ants.append(Ant(i))
-    
-    systemStart(iteration, cities, ants, pheromoneMatrix, numberOfCities, numberOfAnts, beta, q0, rho, ksi, tau0)
-   
+        
+    systemStart(scene,iteration, cities, ants, pheromoneMatrix, numberOfCities, numberOfAnts, beta, q0, rho, ksi, tau0, resultFile)
     
