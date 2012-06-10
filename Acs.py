@@ -15,7 +15,7 @@ ants = []
 pheromoneMatrix = []
 numberOfAnts = 10
 
-beta = 3 # heuristic parameter
+beta = 2.5 # heuristic parameter
 q0 = 0.9 # control parameter for random proportional
 
 rho = 0.1 # evaporation coefficient
@@ -29,7 +29,19 @@ cities = []
 def calculateDistance(start, end):
 
     return math.sqrt((start.coordinate[0] - end.coordinate[0]) ** 2.0 +
-                                  (start.coordinate[1] - end.coordinate[1]) ** 2.0)
+                        (start.coordinate[1] - end.coordinate[1]) ** 2.0 +
+                                (start.coordinate[2] - end.coordinate[2]) ** 2.0)
+    
+
+def calculateCost(antTour):
+    
+    antTourLength = 0
+    
+    for i in range(0, len(antTour)-1):
+        antTourLength += calculateDistance(antTour[i], antTour[i+1])
+        
+    return antTourLength
+
 
 def nearestNeighbor(cities):
     # nearest neighbor for initialization pheromone
@@ -120,8 +132,7 @@ def tourConstruction(ant, numberOfCities, cities, beta, q0):
         
     ant.tour.append(cities.pop())
     
-    for i in range(0, len(ant.tour)-1):
-        ant.tourLength += calculateDistance(ant.tour[i], ant.tour[i+1])
+    ant.tourLength = calculateCost(ant.tour)
         
         
 def localPheromoneUpdate(ant, phrMatrix, tau0, ksi):
@@ -140,6 +151,34 @@ def globalPheromoneUpdate(bestTour, bestTourLength, phrMatrix, rho):
         next = bestTour[i+1].id
         phrMatrix[current][next] = ((1 - rho) * phrMatrix[current][next] ) + (rho * (1/bestTourLength))
         phrMatrix[next][current] = phrMatrix[current][next]
+
+
+def localSearch(antTour, antTourLength):
+    
+    for i in range(0, len(antTour)-1):
+        print "i",i
+        for j in range(i+1, len(antTour)):
+            print "j",j
+            newAntTour = list(antTour)
+            k, l = i, j
+            
+            while k < l:
+                newAntTour[k], newAntTour[l] = newAntTour[l], newAntTour[k] # swap
+                
+                k += 1
+                l -= 1
+            
+            newAntTourLength = calculateCost(newAntTour)
+            
+            if newAntTourLength < antTourLength:
+                print newAntTourLength, antTourLength
+                antTourLength = newAntTourLength
+                antTour = newAntTour
+                
+                return antTour, antTourLength
+    
+    return antTour, antTourLength
+                
 
 
 def initializeTours(bestTour, ants):
@@ -167,7 +206,7 @@ def systemStart(scene, iteration, cities, ants, pheromoneMatrix, numberOfCities,
     strToFile = ""
     
     for i in range (0,iteration):
-        #print "iteration",i
+        print "iteration",i
         strToFile = "\n\niteration" + str(i)
         resultFile.write(strToFile)
         
@@ -185,21 +224,24 @@ def systemStart(scene, iteration, cities, ants, pheromoneMatrix, numberOfCities,
             strToFile = "\nAnt's tour. Tour length: " + str(ants[j].tourLength)
             resultFile.write(strToFile)
             scene.updateTour(ants[j].tour)
-            #time.sleep(0.5)
+            time.sleep(0.5)
             
+            if bestTourLength != 0 and bestTourLength < ants[j].tourLength:
+                ants[j].tour, ants[j].tourLength = localSearch(list(ants[j].tour), ants[j].tourLength)
+              
             if bestTourLength == 0 or bestTourLength > ants[j].tourLength:
                 bestTourLength = ants[j].tourLength
                 bestTour = ants[j].tour
-                
+                  
         
         if globalBestTourLength == 0 or globalBestTourLength > bestTourLength:
             globalBestTourLength = bestTourLength
-            #print "Best tour until now.. Tour length: ", globalBestTourLength
+            print "Best tour until now.. Tour length: ", globalBestTourLength
             strToFile = "\n\nBest tour until now.. Tour length: " + str(globalBestTourLength)
             resultFile.write(strToFile)
             globalBestTour = bestTour
             scene.updateTour(globalBestTour)
-            #time.sleep(0.5)
+            time.sleep(0.5)
         
         globalPheromoneUpdate(bestTour, bestTourLength, pheromoneMatrix, rho)
         
@@ -213,13 +255,15 @@ def systemStart(scene, iteration, cities, ants, pheromoneMatrix, numberOfCities,
     strToFile = "\n\nBest Tour Length:" + str(globalBestTourLength)
     resultFile.write(strToFile)
     scene.updateTour(globalBestTour)
-    #time.sleep(0.5)
+    time.sleep(0.5)
     resultFile.close()
+    for i in range(0,38):
+        print pheromoneMatrix[i].index(max(pheromoneMatrix[i]))
     
 def start(scene, city):
     global cities, numberOfCities
     
-    resultFile = open("result","w")
+    resultFile = open("results","w")
     
     cities = city
     numberOfCities = len(cities)

@@ -4,6 +4,8 @@ from OpenGL.GLU import *
 import sys
 from OpenGL.raw.GLUT import glutSolidSphere
 import Acs
+#from Image import *
+import Image
 
 import threading
         
@@ -18,63 +20,48 @@ class Runner(threading.Thread):
         
 
 class City(object):
-    def __init__(self, x, y, cityId):
+    def __init__(self, x, y, z, cityId):
         self.id = cityId
-        self.coordinate = [x,y]
+        self.coordinate = [x,y,z]
 
         
-def createCities(cities, citiesCoordinatesX, citiesCoordinatesY ):
+def createCities(cities, citiesCoordinatesX, citiesCoordinatesY, citiesCoordinatesZ ):
+    
     citiesFile = open("djibouti38_optimal6656.tsp","r")
     
     for i in range(0,38):
         line = citiesFile.readline()
         line = line.strip()
         line = line.split(" ")
-        cities.append(City(float(line[1]), float(line[2]), i))
+        cities.append(City(float(line[1]), float(line[2]), float(line[3]), i))
         citiesCoordinatesX.append(float(line[1]))
         citiesCoordinatesY.append(float(line[2]))
+        citiesCoordinatesZ.append(float(line[3]))
         
     citiesFile.close()
 
 class Scene(object):
     
-    def __init__(self, citiesX, citiesY):
+    def __init__(self, citiesX, citiesY, citiesZ):
         self.citiesX = citiesX
-        self.citiesY = citiesY
-        self.normalize_columns(self.citiesX, self.citiesY)
+        self.citiesY = citiesY        
+        self.citiesZ = citiesZ
+        self.normalize_columns(self.citiesX, self.citiesY, self.citiesZ)
+        
         self.tour = []
+        
         # Viewpoint
-        self.camera = [0.5,0.5,1.5]
-        self.bakilannokta = [0.5,0.5,-1.0]
+        self.camera = [-1.8,1.4,-3.5]
+        self.bakilannokta = [0.2,0.2,-0.5]
         self.runScene()
         
     def updateTour(self,newTour):
         self.tour = newTour
         self.DrawGLScene()
     
-    
-    def LoadTextures(self):
-       #global texture
-       image = open("Data/lesson06/NeHe.bmp","r")
-       
-       ix = image.size[0]
-       iy = image.size[1]
-       image = image.tostring("raw", "RGBX", 0, -1)
-       
-      
-       glPixelStorei(GL_UNPACK_ALIGNMENT,1)
-       glTexImage2D(GL_TEXTURE_2D, 0, 3, ix, iy, 0, GL_RGBA, GL_UNSIGNED_BYTE, image)
-       glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP)
-       glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP)
-       glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT)
-       glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT)
-       glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST)
-       glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST)
-       glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_DECAL)
         
     
-    def InitGL(self,Width, Height):        
-        #self.LoadTextures()        
+    def InitGL(self,Width, Height):  
         glClearColor(0.0, 0.0, 0.0, 0.0)    
         glClearDepth(1.0)                   
         glDepthFunc(GL_LESS)                
@@ -87,6 +74,13 @@ class Scene(object):
         gluPerspective(45.0, float(Width)/float(Height), 0.1, 100.0)
     
         glMatrixMode(GL_MODELVIEW)
+        
+        # setup blending
+        glBlendFunc(GL_SRC_ALPHA,GL_ONE)            # Set The Blending Function For Translucency
+        glColor4f(1.0, 1.0, 1.0, 0.5)
+        
+        glEnable(GL_BLEND)            # Turn Blending On
+        glDisable(GL_DEPTH_TEST)         # Turn Depth Testing Off
     
     
     def ReSizeGLScene(self,Width, Height):
@@ -108,20 +102,60 @@ class Scene(object):
                   self.bakilannokta[0],self.bakilannokta[1],self.bakilannokta[2],
                   0.0,1,0.0)
         
-        glColor3f(0,0,1)
-        glBegin(GL_QUADS)                  
-        glTexCoord2f(0.0, 0.0);glVertex3f(0, 1.0, 0.0)         
-        glTexCoord2f(1.0, 0.0);glVertex3f(1.0, 1.0, 0.0)           
-        glTexCoord2f(1.0, 1.0);glVertex3f(1.0, 0, 0.0)         
-        glTexCoord2f(0.0, 1.0);glVertex3f(0, 0, 0.0)         
-        glEnd()                            
+        #=======================================================================
+        # glColor3f(0,0,1)
+        # glBegin(GL_QUADS)                  
+        # glTexCoord2f(0.0, 0.0);glVertex3f(0, 1.0, 0.0)         
+        # glTexCoord2f(1.0, 0.0);glVertex3f(1.0, 1.0, 0.0)           
+        # glTexCoord2f(1.0, 1.0);glVertex3f(1.0, 0, 0.0)         
+        # glTexCoord2f(0.0, 1.0);glVertex3f(0, 0, 0.0)         
+        # glEnd()                            
+        #=======================================================================
     
+       
+        glBegin(GL_QUADS);
+        glColor3f(0.2,0.4,0.0);
+        glVertex3f(1.0,1.0,-1.0);
+        glVertex3f(-1.0,1.0,-1.0);
+        glVertex3f(-1.0,1.0,1.0);
+        glVertex3f(1.0,1.0,1.0);
+                
+        glColor3f(0.2,0.4,0.0);
+        glVertex3f(1.0,-1.0,1.0);
+        glVertex3f(-1.0,-1.0,1.0);
+        glVertex3f(-1.0,-1.0,-1.0);
+        glVertex3f(1.0,-1.0,-1.0);
+                
+        glColor3f(0.0,0.2,0.4);
+        glVertex3f(1.0,1.0,1.0);
+        glVertex3f(-1.0,1.0,1.0);
+        glVertex3f(-1.0,-1.0,1.0);
+        glVertex3f(1.0,-1.0,1.0);
+                
+        glColor3f(0.0,0.2,0.4);
+        glVertex3f(1.0,-1.0,-1.0);
+        glVertex3f(-1.0,-1.0,-1.0);
+        glVertex3f(-1.0,1.0,-1.0);
+        glVertex3f(1.0,1.0,-1.0);
+                
+        glColor3f(0.4,0.0,0.2);
+        glVertex3f(-1.0,1.0,1.0);
+        glVertex3f(-1.0,1.0,-1.0);
+        glVertex3f(-1.0,-1.0,-1.0);
+        glVertex3f(-1.0,-1.0,1.0);
+                
+        glColor3f(0.4,0.0,0.2);
+        glVertex3f(1.0,1.0,-1.0);
+        glVertex3f(1.0,1.0,1.0);
+        glVertex3f(1.0,-1.0,1.0);
+        glVertex3f(1.0,-1.0,-1.0);
+        glEnd()
     
         # Cities
-        glColor3f(1,0.5,0)
+        glColor3f(1.0,1.0,1.0)
         for i in range(len(self.citiesX)):
             glPushMatrix()
-            glTranslatef(self.citiesX[i],self.citiesY[i],0)
+            glTranslatef(self.citiesX[i]-0.5,self.citiesY[i]-0.5, self.citiesZ[i])
             glutSolidSphere(0.005,10,10)
             glPopMatrix()
             
@@ -129,16 +163,16 @@ class Scene(object):
         if(self.tour!=[]):
             tour = self.tour
             cityCount = len(self.tour)
-            glColor3f(1,0,0)
+            glColor3f(0.5, 0.1 ,0.3)
             glLineWidth(3)
             glBegin(GL_LINES)
             for i in range(cityCount-1):
                 currentCity = self.tour[i].id
                 nextCity = self.tour[i+1].id
-                glVertex3f(self.citiesX[currentCity], self.citiesY[currentCity], 0.01) # origin of the line
-                glVertex3f(self.citiesX[nextCity], self.citiesY[nextCity], 0.01) # ending point of the line
-            glVertex3f(self.citiesX[tour[cityCount-1].id], self.citiesY[tour[cityCount-1].id], 0.01) # origin of the line
-            glVertex3f(self.citiesX[tour[0].id], self.citiesY[tour[0].id], 0.01) # ending point of the line
+                glVertex3f(self.citiesX[currentCity]-0.5, self.citiesY[currentCity]-0.5, self.citiesZ[currentCity]) # origin of the line
+                glVertex3f(self.citiesX[nextCity]-0.5, self.citiesY[nextCity]-0.5, self.citiesZ[nextCity]) # ending point of the line
+            glVertex3f(self.citiesX[tour[cityCount-1].id]-0.5, self.citiesY[tour[cityCount-1].id]-0.5, self.citiesZ[tour[cityCount-1].id]) # origin of the line
+            glVertex3f(self.citiesX[tour[0].id]-0.5, self.citiesY[tour[0].id]-0.5, self.citiesZ[tour[0].id]) # ending point of the line
             glEnd()
 
         glutSwapBuffers()
@@ -173,17 +207,22 @@ class Scene(object):
             
         glutPostRedisplay()
         
-    def normalize_columns(self,X,Y):
+    def normalize_columns(self, X, Y, Z):
         
         minX = min(X)
         minY = min(Y)
+        minZ = min(Z)
         maxX = max(X)-minX
         maxY = max(Y)-minY
+        maxZ = max(Z)-minZ
+        
         for i in range(0,len(X)):
             X[i] -= minX
             X[i] /= maxX
             Y[i] -= minY
             Y[i] /= maxY
+            Z[i] -= minZ
+            Z[i] /= maxZ
         
     
     def runScene(self):
@@ -219,5 +258,9 @@ if __name__ == "__main__":
     cities = []
     citiesCoordinatesX = []
     citiesCoordinatesY = []
-    createCities(cities, citiesCoordinatesX, citiesCoordinatesY)
-    scene = Scene(citiesCoordinatesX,citiesCoordinatesY)
+    citiesCoordinatesZ = []
+    
+    createCities(cities, citiesCoordinatesX, citiesCoordinatesY, citiesCoordinatesZ)
+    scene = Scene(citiesCoordinatesX, citiesCoordinatesY, citiesCoordinatesZ)
+    
+        
