@@ -55,11 +55,11 @@ class Scene(object):
         self.bakilannokta = [0.2,0.2,-0.5]
         self.runScene()
         
+        
     def updateTour(self,newTour):
         self.tour = newTour
         self.DrawGLScene()
-    
-        
+     
     
     def InitGL(self,Width, Height):  
         glClearColor(0.0, 0.0, 0.0, 0.0)    
