@@ -6,17 +6,19 @@ from OpenGL.raw.GLUT import glutSolidSphere
 import Acs
 #from Image import *
 import Image
-
-import threading
-        
-class Runner(threading.Thread):
-    def __init__(self,s,c):
-        threading.Thread.__init__(self)
-        self.scene = s
-        self.cities = c
-        
-    def run(self):
-        Acs.start(self.scene, self.cities)
+#===============================================================================
+# import threading
+#        
+#        
+# class Runner(threading.Thread):
+#    def __init__(self,s,c):
+#        threading.Thread.__init__(self)
+#        self.scene = s
+#        self.cities = c
+#        
+#    def run(self):
+#        Acs.start(self.scene, self.cities)
+#===============================================================================
         
 
 class City(object):

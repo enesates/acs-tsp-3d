@@ -10,20 +10,19 @@ from Scene import *
 from Ant import *
 
 
-iteration = 100
+iteration = 50
 ants = []
 pheromoneMatrix = []
 numberOfAnts = 10
 
 beta = 2 # heuristic parameter
-q0 = 0.98 # control parameter for random proportional
+q0 = 0.9 # control parameter for random proportional
 
 rho = 0.1 # evaporation coefficient
 ksi = 0.1 # local_pheromone
 
 numberOfCities = 0
 cities = []
-
 
 
 def calculateDistance(start, end):
@@ -43,7 +42,7 @@ def calculateCost(antTour):
     return antTourLength
 
 
-def nearestNeighbor(cities):
+def nearestNeighbor(cities, resultFile):
     # nearest neighbor for initialization pheromone
     path = []
     remove = 0
@@ -69,9 +68,11 @@ def nearestNeighbor(cities):
         tourLength += minDistance
             
     path.append(path[0])
+    tourLength += calculateDistance(nextCity, path[0])
     
     print "Nearest Neighbor tour length:", tourLength
     strToFile = "\n\nNearest Neighbor tour length:" + str(tourLength)
+    resultFile.write(strToFile)
 
     return tourLength
       
@@ -134,6 +135,7 @@ def tourConstruction(ant, numberOfCities, cities, beta, q0):
         cities.remove(nextCity)
         
     ant.tour.append(cities.pop())
+    ant.tour.append(ant.tour[0])
     
     ant.tourLength = calculateCost(ant.tour)
         
@@ -156,7 +158,7 @@ def globalPheromoneUpdate(bestTour, bestTourLength, phrMatrix, rho):
         phrMatrix[next][current] = phrMatrix[current][next]
 
 
-def localSearch(antId, antTour, antTourLength):
+def localSearch(antId, antTour, antTourLength, resultFile):
     
     for i in range(0, len(antTour)-1):
         for j in range(i+1, len(antTour)):
@@ -175,7 +177,10 @@ def localSearch(antId, antTour, antTourLength):
                 antTourLength = newAntTourLength
                 antTour = newAntTour
                 
-                print antId,". ant's local search tour. Tour length:", antTourLength
+                print antId+1,". ant's local search tour. Tour length:", antTourLength
+                strToFile = "\n" + str(antId+1) + ". ant's local search tour. Tour length:" + str(antTourLength)
+                resultFile.write(strToFile)
+                
                 return antTour, antTourLength
     
     return antTour, antTourLength
@@ -208,7 +213,7 @@ def systemStart(scene, iteration, cities, ants, pheromoneMatrix, numberOfCities,
     
     for i in range (0,iteration):
         print "\n\nIteration",i
-        strToFile = "\n\nIteration" + str(i)
+        strToFile = "\n\n\nIteration " + str(i)
         resultFile.write(strToFile)
         
         bestTourLength = 0
@@ -221,22 +226,22 @@ def systemStart(scene, iteration, cities, ants, pheromoneMatrix, numberOfCities,
             #localSearch()
             localPheromoneUpdate(ants[j], pheromoneMatrix, tau0, ksi)
             
-            print "\n", j ,". ant's tour. Tour length: ", ants[j].tourLength
-            strToFile = "\n" + str(j) + ". ant's tour. Tour length: " + str(ants[j].tourLength)
+            print "\n", j+1 ,". ant's tour. Tour length: ", ants[j].tourLength
+            strToFile = "\n\n" + str(j+1) + ". ant's tour. Tour length: " + str(ants[j].tourLength)
             resultFile.write(strToFile)
             
             scene.updateTour(ants[j].tour)
             time.sleep(0.5)
             
             if bestTourLength != 0 and bestTourLength < ants[j].tourLength:
-                ants[j].tour, ants[j].tourLength = localSearch(ants[j].id, list(ants[j].tour), ants[j].tourLength)
+                ants[j].tour, ants[j].tourLength = localSearch(ants[j].id, list(ants[j].tour), ants[j].tourLength, resultFile)
                 
             if bestTourLength == 0 or bestTourLength > ants[j].tourLength:
                 bestTourLength = ants[j].tourLength
                 bestTour = ants[j].tour
                 
-                print j,". ant's best tour. Tour length:", bestTourLength
-                strToFile = str(j) + ". ant's best tour. Tour length: " + str(bestTourLength)
+                print j+1,". ant's best tour. Tour length:", bestTourLength
+                strToFile = "\n" + str(j+1) + ". ant's best tour. Tour length: " + str(bestTourLength)
                 resultFile.write(strToFile)
                   
         
@@ -244,7 +249,7 @@ def systemStart(scene, iteration, cities, ants, pheromoneMatrix, numberOfCities,
             globalBestTourLength = bestTourLength
             
             print "\nBest tour until now. Tour length: ", globalBestTourLength
-            strToFile = "\nBest tour until now. Tour length: " + str(globalBestTourLength)
+            strToFile = "\n\nBest tour until now. Tour length: " + str(globalBestTourLength)
             resultFile.write(strToFile)
             
             globalBestTour = bestTour
@@ -254,13 +259,13 @@ def systemStart(scene, iteration, cities, ants, pheromoneMatrix, numberOfCities,
         globalPheromoneUpdate(bestTour, bestTourLength, pheromoneMatrix, rho)
         
         
-    for i in range(0, len(globalBestTour)+1):
-       print "\nBest tour", i, ". city coordinate:",globalBestTour[i].coordinate
-       strToFile = "\n\nBest tour"+ str(i) + ". city coordinate:" + str(globalBestTour[i].coordinate)
+    for i in range(0, len(globalBestTour)):
+       print "\nBest tour", i+1, ". city coordinate:",globalBestTour[i].coordinate
+       strToFile = "\n\nBest tour "+ str(i+1) + ". city coordinate:" + str(globalBestTour[i].coordinate)
        resultFile.write(strToFile)
         
-    print "\nBest Tour Length:", globalBestTourLength
-    strToFile = "\n\nBest Tour Length:" + str(globalBestTourLength)
+    print "\nBest Tour Length: ", globalBestTourLength
+    strToFile = "\n\nBest Tour Length: " + str(globalBestTourLength)
     resultFile.write(strToFile)
     
     scene.updateTour(globalBestTour)
@@ -280,7 +285,7 @@ def start(scene, city):
     cities = city
     numberOfCities = len(cities)
     
-    tau0 = 1/(len(cities) * nearestNeighbor(list(cities))) # copying cities list and send nn algorithm
+    tau0 = 1/(len(cities) * nearestNeighbor(list(cities), resultFile)) # copying cities list and send nn algorithm
     
     # tau0 = (n * Cnn )^-1
     
