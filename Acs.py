@@ -10,7 +10,7 @@ from Scene import *
 from Ant import *
 
 
-iteration = 20
+iteration = 50
 ants = []
 pheromoneMatrix = []
 numberOfAnts = 10
