@@ -10,7 +10,7 @@ from Scene import *
 from Ant import *
 
 
-iteration = 50
+iteration = 20
 ants = []
 pheromoneMatrix = []
 numberOfAnts = 10
@@ -163,31 +163,36 @@ def globalPheromoneUpdate(globalBestTour, globalBestTourLength, phrMatrix, rho):
 
 def localSearch(antId, antTour, antTourLength, resultFile):
     
-    for i in range(0, len(antTour)-1):
-        for j in range(i+1, len(antTour)):
-            newAntTour = list(antTour)
-            k, l = i, j
-            
-            while k < l:
-                newAntTour[k], newAntTour[l] = newAntTour[l], newAntTour[k] # swap
-                
-                k += 1
-                l -= 1
-            
-            newAntTourLength = calculateCost(newAntTour)
-            
-            if newAntTourLength < antTourLength:
-                antTourLength = newAntTourLength
-                antTour = newAntTour
-                
-                print antId+1,". ant's local search tour. Tour length:", antTourLength
-                strToFile = "\n" + str(antId+1) + ". ant's local search tour. Tour length:" + str(antTourLength)
-                resultFile.write(strToFile)
-                
-                return antTour, antTourLength
     
-    return antTour, antTourLength
+    while True:
+        
+        best = antTourLength
+        
+        for i in range(0, len(antTour)-1):
+            for j in range(i+1, len(antTour)):
+                newAntTour = list(antTour)
+                k, l = i, j
                 
+                while k < l:
+                    newAntTour[k], newAntTour[l] = newAntTour[l], newAntTour[k] # swap
+                    
+                    k += 1
+                    l -= 1
+                
+                newAntTourLength = calculateCost(newAntTour)
+                
+                if newAntTourLength < antTourLength:
+                    antTourLength = newAntTourLength
+                    antTour = newAntTour
+                                        
+                    
+        if best == antTourLength:
+            print antId+1,". ant's local search tour. Tour length:", antTourLength
+            strToFile = "\n" + str(antId+1) + ". ant's local search tour. Tour length:" + str(antTourLength)
+            resultFile.write(strToFile)
+            
+            return antTour, antTourLength
+              
 
 
 def initializeTours(bestTour, ants):
@@ -236,15 +241,14 @@ def systemStart(scene, iteration, cities, ants, pheromoneMatrix, numberOfCities,
             scene.updateTour(ants[j].tour)
             time.sleep(0.5)
             
-            if bestTourLength != 0 and bestTourLength < ants[j].tourLength:
-               ants[j].tour, ants[j].tourLength = localSearch(ants[j].id, list(ants[j].tour), ants[j].tourLength, resultFile)
+            ants[j].tour, ants[j].tourLength = localSearch(ants[j].id, list(ants[j].tour), ants[j].tourLength, resultFile)
                
             if bestTourLength == 0 or bestTourLength > ants[j].tourLength:
                 bestTourLength = ants[j].tourLength
                 bestTour = ants[j].tour
                 
-                print j+1,". ant's best tour. Tour length:", bestTourLength
-                strToFile = "\n" + str(j+1) + ". ant's best tour. Tour length: " + str(bestTourLength)
+                print j+1,". ant's tour is the best tour. Tour length:", bestTourLength
+                strToFile = "\n" + str(j+1) + ". ant's tour is the best tour. Tour length: " + str(bestTourLength)
                 resultFile.write(strToFile)
                   
         
