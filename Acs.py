@@ -15,6 +15,9 @@ ants = []
 pheromoneMatrix = []
 numberOfAnts = 10
 
+Q = 10 # constant representing the amount of pheromone an ant put on the path
+
+alpha = 1.0 # heuristic parameter
 beta = 3.0 # heuristic parameter
 q0 = 0.9 # control parameter for random proportional
 
@@ -95,7 +98,7 @@ def calculateTauEtha(currentCity, cities, beta, tauEtha):
     
     for i in range(0,len(cities)):
         try:
-            tauEthaVal = pheromoneMatrix[currentCity.id][i] * math.pow(1.0/calculateDistance(currentCity, cities[i]), beta) 
+            tauEthaVal = math.pow(pheromoneMatrix[currentCity.id][i], alpha) * math.pow(1.0/calculateDistance(currentCity, cities[i]), beta) 
         except ZeroDivisionError:
             tauEthaVal = 0
         tauEtha.append(tauEthaVal)
@@ -157,7 +160,7 @@ def globalPheromoneUpdate(globalBestTour, globalBestTourLength, phrMatrix, rho):
         current = globalBestTour[i].id
         next = globalBestTour[i+1].id
 
-        phrMatrix[current][next] = ((1 - rho) * phrMatrix[current][next] ) + (rho * (1/globalBestTourLength))
+        phrMatrix[current][next] = ((1 - rho) * phrMatrix[current][next] ) + (Q * (1/globalBestTourLength))
         phrMatrix[next][current] = phrMatrix[current][next]
 
 
@@ -175,6 +178,12 @@ def localSearch(antId, antTour, antTourLength, resultFile):
                 
                 while k < l:
                     newAntTour[k], newAntTour[l] = newAntTour[l], newAntTour[k] # swap
+                    
+                    if k == 0:
+                        newAntTour[len(antTour)-1] = newAntTour[k]
+                    
+                    if l == len(antTour)-1:
+                        newAntTour[0] = newAntTour[l]
                     
                     k += 1
                     l -= 1
