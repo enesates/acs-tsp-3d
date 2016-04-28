@@ -1,7 +1,4 @@
 # The solution of Traveling Salesperson Problem by using Ant Colony System algorithm and its 3d simulation with OpenGL
-# https://github.com/nsates/acs-tsp-3d
-# Enes Ates <enes@enesates.com>
-# http://www.enesates.com
 
 import math
 import random
